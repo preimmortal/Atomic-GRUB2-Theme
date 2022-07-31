@@ -4,7 +4,6 @@ THEME_DIR="/usr/share/grub/themes"
 THEME_NAME="Atomic"
 MAX_DELAY=20
 
-
 #colors
 
 CDEF=" \033[0m"                                     # default color
@@ -17,8 +16,6 @@ b_CCIN=" \033[1;36m"                                # bold info color
 b_CGSC=" \033[1;32m"                                # bold success color
 b_CRER=" \033[1;31m"                                # bold error color
 b_CWAR=" \033[1;33m"  
-
-
 
 # echo like ...  with  flag type  and display message  colors
 prompt () {
@@ -38,17 +35,12 @@ prompt () {
 }
 
 # Welcome message
-  prompt -s "\n\t          ****************************\n\t          *  Sleek Bootloader theme  *\n\t          ****************************\n"
-prompt -s "\t\t \t Grub theme by techsan \n \n"   
-
-
- 
+  prompt -s "\n\t          ****************************\n\t          *  Atomic Bootloader theme  *\n\t          ****************************\n"
 
 # checking command availability
 function has_command() {
   command -v $1 > /dev/null
 }
-
 
 prompt -i "Press enter to begin installation${CDEF}(automatically install after 10s) ${b_CWAR}:${CDEF}"
 read -t10  
@@ -61,12 +53,9 @@ if [ "$UID" -eq "$ROOT_UID" ]; then
   [[ -d ${THEME_DIR}/${THEME_NAME} ]] && rm -rf ${THEME_DIR}/${THEME_NAME}
   mkdir -p "${THEME_DIR}/${THEME_NAME}" 
 
-
-
   #copy theme
   prompt -i "\nInstalling ${THEME_NAME} theme...\n"
   cp -a ${THEME_NAME}/* ${THEME_DIR}/${THEME_NAME}
-  
   
   #set theme
   prompt -i "\nSetting ${THEME_NAME} as default...\n"
@@ -77,7 +66,6 @@ if [ "$UID" -eq "$ROOT_UID" ]; then
   grep "GRUB_THEME=" /etc/default/grub 2>&1 >/dev/null && sed -i '/GRUB_THEME=/d' /etc/default/grub
 
   echo "GRUB_THEME=\"${THEME_DIR}/${THEME_NAME}/theme.txt\"" >> /etc/default/grub
-
 
   prompt -i "\n finalizing your installation .......\n \n."
   # Update grub config
@@ -97,15 +85,10 @@ if [ "$UID" -eq "$ROOT_UID" ]; then
   # Success message
   prompt -s "\n\t          ****************************\n\t          *  successfully installed  *\n\t          ****************************\n"
 
-  
-
 else
 
   # Error message
   prompt -e "\n [ Error! ] -> Run me as root  \n \n "
 
 fi
-
-
-
 
