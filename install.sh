@@ -1,107 +1,111 @@
-#!/usr/bin/env bash
+#!/bin/bash
+ROOT_UID=0
+THEME_DIR="/usr/share/grub/themes"
+THEME_NAME="Atomic"
+MAX_DELAY=20
 
-echo -e ""
-echo -e "\e[97mThis script installs the theme in the default paths\e[0m"
-echo -e "\e[1m\e[32m==> \e[97m\e[100m/boot/grub\e[0m"
-echo -e "and"
-echo -e "\e[1m\e[32m==> \e[97m\e[100m/boot/grub2\e[0m"
-echo -e "and compile this in the same paths with the command"
-echo -e "\e[1m\e[34m-> \e[97m\e[100mgrub-mkconfig -o /boot/grub/grub.cfg\e[0m"
-echo -e "or"
-echo -e "\e[1m\e[34m-> \e[97m\e[100mgrub2-mkconfig -o /boot/grub2/grub.cfg\e[0m"
-echo -e ""
-echo -e "\e[5m\e[44mif you use a custom path for your Grub"
-echo -e "you need to adjust this script or theme to your needs...\e[0m"
-echo -e ""
 
-git --version 2>&1 >/dev/null
-GIT_IS_AVAILABLE=$?
+#colors
 
-  if [ $GIT_IS_AVAILABLE -ne 0 ]; then
-  	echo -e "Git command is not installed, please install!"
-	exit 1
-  fi
+CDEF=" \033[0m"                                     # default color
+CCIN=" \033[0;36m"                                  # info color
+CGSC=" \033[0;32m"                                  # success color
+CRER=" \033[0;31m"                                  # error color
+CWAR=" \033[0;33m"                                  # warning color
+b_CDEF=" \033[1;37m"                                # bold default color
+b_CCIN=" \033[1;36m"                                # bold info color
+b_CGSC=" \033[1;32m"                                # bold success color
+b_CRER=" \033[1;31m"                                # bold error color
+b_CWAR=" \033[1;33m"  
 
-GRUB_NAME=""
-UPDATE_GRUB=""
 
-function compile_grub() {
-  echo -e "\e[1m\e[32m==> \e[97mApplying changes...\e[0m"
 
-  ${UPDATE_GRUB}
-
-  echo -e "\e[1m\e[34m  -> \e[97mTheme successfuly applied!"
-  echo -e "\e[1m\e[34m  -> \e[97mRestart your PC to check it out.\e[0m"
-  sleep 2
+# echo like ...  with  flag type  and display message  colors
+prompt () {
+  case ${1} in
+    "-s"|"--success")
+      echo -e "${b_CGSC}${@/-s/}${CDEF}";;          # print success message
+    "-e"|"--error")
+      echo -e "${b_CRER}${@/-e/}${CDEF}";;          # print error message
+    "-w"|"--warning")
+      echo -e "${b_CWAR}${@/-w/}${CDEF}";;          # print warning message
+    "-i"|"--info")
+      echo -e "${b_CCIN}${@/-i/}${CDEF}";;          # print info message
+    *)
+    echo -e "$@"
+    ;;
+  esac
 }
 
-function update_grub_file() {
-  grep -v GRUB_THEME </etc/default/grub >/tmp/clean_grub
-  mv /tmp/clean_grub /etc/default/grub
-  echo "GRUB_THEME=/boot/${GRUB_NAME}/themes/Atomic/theme.txt" >>/etc/default/grub
+# Welcome message
+  prompt -s "\n\t          ****************************\n\t          *  Sleek Bootloader theme  *\n\t          ****************************\n"
+prompt -s "\t\t \t Grub theme by techsan \n \n"   
+
+
+ 
+
+# checking command availability
+function has_command() {
+  command -v $1 > /dev/null
 }
 
-function copy_atomic_files() {
-  echo -e "\e[1m\e[32m==> \e[97mDownloading files...\e[0m"
-  git clone https://github.com/lfelipe1501/Atomic-GRUB2-Theme /tmp/Atomic-GRUB2-Theme
-  echo -e "\e[1m\e[32m==> \e[97mCopying files...\e[0m"
-  cp -rf /tmp/Atomic-GRUB2-Theme/Atomic /boot/${GRUB_NAME}/themes/
-}
 
-function get_distro() {
-  if [ -e /etc/os-release ]; then
-    source /etc/os-release
-    if [[ "$ID" =~ (debian|ubuntu|solus) || "$ID_LIKE" =~ (debian|ubuntu) ]]; then
-      UPDATE_GRUB='update-grub'
-    elif [[ "$ID" =~ (arch|gentoo) || "$ID_LIKE" =~ (archlinux|gentoo) ]]; then
-      UPDATE_GRUB='grub-mkconfig -o /boot/grub/grub.cfg'
-    elif [[ "$ID" =~ (centos|fedora|opensuse) || "$ID_LIKE" =~ (fedora|rhel|suse) ]]; then
-      UPDATE_GRUB='grub2-mkconfig -o /boot/grub2/grub.cfg'
+prompt -i "Press enter to begin installation${CDEF}(automatically install after 10s) ${b_CWAR}:${CDEF}"
+read -t10  
+
+#checking for root access
+prompt -w "\nChecking for root access...\n"
+if [ "$UID" -eq "$ROOT_UID" ]; then
+  # Create themes directory if not exists
+  prompt -i "\nChecking for the existence of themes directory...\n"
+  [[ -d ${THEME_DIR}/${THEME_NAME} ]] && rm -rf ${THEME_DIR}/${THEME_NAME}
+  mkdir -p "${THEME_DIR}/${THEME_NAME}" 
+
+
+
+  #copy theme
+  prompt -i "\nInstalling ${THEME_NAME} theme...\n"
+  cp -a ${THEME_NAME}/* ${THEME_DIR}/${THEME_NAME}
+  
+  
+  #set theme
+  prompt -i "\nSetting ${THEME_NAME} as default...\n"
+  
+  # Backup grub config
+  cp -an /etc/default/grub /etc/default/grub.bak
+  
+  grep "GRUB_THEME=" /etc/default/grub 2>&1 >/dev/null && sed -i '/GRUB_THEME=/d' /etc/default/grub
+
+  echo "GRUB_THEME=\"${THEME_DIR}/${THEME_NAME}/theme.txt\"" >> /etc/default/grub
+
+
+  prompt -i "\n finalizing your installation .......\n \n."
+  # Update grub config
+  echo -e "Updating grub config..."
+  if has_command update-grub; then
+    update-grub
+  elif has_command grub-mkconfig; then
+    grub-mkconfig -o /boot/grub/grub.cfg
+  elif has_command grub2-mkconfig; then
+    if has_command zypper; then
+      grub2-mkconfig -o /boot/grub2/grub.cfg
+    elif has_command dnf; then
+      grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
     fi
   fi
-}
 
-function main() {
+  # Success message
+  prompt -s "\n\t          ****************************\n\t          *  successfully installed  *\n\t          ****************************\n"
 
-  # Check user is root
-  if [ $UID == 0 ]; then
-    echo "Yes, You are root!"
-  else
-    echo "No, You must be root!"
-    exit 1
-  fi
+  
 
-  get_distro
+else
 
-  # Check which grub
-  if [ -d "/boot/grub" ]; then
-    GRUB_NAME="grub"
-  else
-    GRUB_NAME="grub2"
-  fi
-  copy_atomic_files
+  # Error message
+  prompt -e "\n [ Error! ] -> Run me as root  \n \n "
 
-  echo -e "\e[1m\e[97m  You must set the theme in your GRUB config file,"
-  while :; do
-    if [ "$answer" = "g" ]; then
-      echo -e "\e[1m\e[97m  You didn't give a valid option, try again."
-    else
-      read -p "  Would you like to do it now? [y/n] " -t 10 answer
-      echo -e "\e[0m"
-      if [ "$answer" = "y" ]; then
-        # backup old grub file
-        cp /etc/default/grub /tmp/grub$(date '+%m-%d-%y_%H:%M:%S')
-        update_grub_file
-        compile_grub
-        break
-      elif [ "$answer" = "n" ]; then
-        break
-      fi
-      let answer=g
-    fi
-  done
+fi
 
-}
 
-main "$@"
-exit 0
+
+
